@@ -1,0 +1,14 @@
+{
+  "name": "net.maaaaa.asset-sanshounaosu-nator",
+  "displayName": "アセット参照直すネーター",
+  "version": "0.1.0",
+  "description": "Prefab の壊れた参照 (Missing Reference) を検査・診断・修復する Editor 拡張です。",
+  "unity": "2022.3",
+  "license": "MIT",
+  "author": {
+    "name": "Poyotoron",
+    "url": "https://github.com/Poyotoron"
+  },
+  "url": "https://github.com/Poyotoron/Asset-Sanshounaosu-Nator/releases/download/0.1.0/net.maaaaa.asset-sanshounaosu-nator-0.1.0.zip",
+  "changelogUrl": "https://github.com/Poyotoron/Asset-Sanshounaosu-Nator/blob/main/CHANGELOG.md"
+}
