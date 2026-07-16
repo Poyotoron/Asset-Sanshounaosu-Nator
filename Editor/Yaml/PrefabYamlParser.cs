@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using Maaaaa.Asn.Editor.Core;
 
@@ -151,10 +152,46 @@ namespace Maaaaa.Asn.Editor.Yaml
         private static string NormalizeYamlScalar(string value)
         {
             value = (value ?? string.Empty).Trim();
-            if (value.Length >= 2 && ((value[0] == '"' && value[value.Length - 1] == '"') ||
-                (value[0] == '\'' && value[value.Length - 1] == '\'')))
-                value = value.Substring(1, value.Length - 2);
-            return value.Replace("\\\"", "\"").Replace("''", "'");
+            if (value.Length < 2) return value;
+            if (value[0] == '\'' && value[value.Length - 1] == '\'')
+                return value.Substring(1, value.Length - 2).Replace("''", "'");
+            if (value[0] != '"' || value[value.Length - 1] != '"') return value;
+
+            // YAML の Unicode / backslash escape は二重引用符スカラー内だけで解釈する。
+            // 逐次処理により "\\\\u0041" はリテラル "\\u0041" のまま保つ。
+            var content = value.Substring(1, value.Length - 2);
+            var decoded = new StringBuilder(content.Length);
+            for (var index = 0; index < content.Length; index++)
+            {
+                var current = content[index];
+                if (current != '\\' || index + 1 >= content.Length)
+                {
+                    decoded.Append(current);
+                    continue;
+                }
+                var escape = content[++index];
+                if (escape == 'u' && index + 4 < content.Length && IsHex(content, index + 1, 4))
+                {
+                    decoded.Append((char)int.Parse(content.Substring(index + 1, 4), NumberStyles.HexNumber, CultureInfo.InvariantCulture));
+                    index += 4;
+                }
+                else if (escape == '\\') decoded.Append('\\');
+                else if (escape == '"') decoded.Append('"');
+                else
+                {
+                    // 未対応 escape は情報を失わないよう元の 2 文字を維持する。
+                    decoded.Append('\\').Append(escape);
+                }
+            }
+            return decoded.ToString();
+        }
+
+        private static bool IsHex(string value, int start, int count)
+        {
+            if (start < 0 || start + count > value.Length) return false;
+            for (var index = start; index < start + count; index++)
+                if (!Uri.IsHexDigit(value[index])) return false;
+            return true;
         }
 
         private static long ResolveGameObjectId(Document document, Dictionary<long, long> componentMap, Dictionary<long, long> transformMap)

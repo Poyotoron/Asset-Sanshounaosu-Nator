@@ -11,18 +11,47 @@ namespace Maaaaa.Asn.Editor.Core
     {
         public static InspectionResult Inspect(string assetPath, bool showProgress)
         {
+            return Inspect(assetPath, showProgress, new Dictionary<string, List<ReferenceRecord>>(StringComparer.OrdinalIgnoreCase));
+        }
+
+        private static InspectionResult Inspect(string assetPath, bool showProgress, Dictionary<string, List<ReferenceRecord>> scanCache)
+        {
             var result = new InspectionResult { RootAssetPath = assetPath };
             var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var backingFileExistence = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
-            try { InspectRecursive(assetPath, result, visited, backingFileExistence, showProgress, true); }
+            try { InspectRecursive(assetPath, result, visited, backingFileExistence, scanCache, showProgress, true); }
             catch (Exception exception) { result.Errors.Add(exception.Message); }
             finally { if (showProgress) EditorUtility.ClearProgressBar(); }
             ReferenceClassifier.ClassifyAll(result.References);
             return result;
         }
 
+        public static BatchInspectionResult InspectBatch(IReadOnlyList<string> assetPaths)
+        {
+            var batch = new BatchInspectionResult();
+            var paths = new List<string>(assetPaths ?? new string[0]);
+            var cache = new Dictionary<string, List<ReferenceRecord>>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                for (var index = 0; index < paths.Count; index++)
+                {
+                    if (EditorUtility.DisplayCancelableProgressBar(AsnText.WindowTitle,
+                            (index + 1) + " / " + paths.Count + ": " + paths[index],
+                            paths.Count == 0 ? 1f : (float)index / paths.Count))
+                    {
+                        batch.Cancelled = true;
+                        break;
+                    }
+                    try { batch.Results.Add(Inspect(paths[index], false, cache)); }
+                    catch (Exception exception) { batch.Errors.Add(paths[index] + ": " + exception.Message); }
+                }
+            }
+            finally { EditorUtility.ClearProgressBar(); }
+            return batch;
+        }
+
         private static void InspectRecursive(string assetPath, InspectionResult result, HashSet<string> visited,
-            Dictionary<string, bool> backingFileExistence, bool showProgress, bool isRoot)
+            Dictionary<string, bool> backingFileExistence, Dictionary<string, List<ReferenceRecord>> scanCache, bool showProgress, bool isRoot)
         {
             if (string.IsNullOrEmpty(assetPath) || !visited.Add(assetPath)) return;
             if (showProgress) EditorUtility.DisplayProgressBar(AsnText.WindowTitle, "参照を走査中: " + assetPath, Mathf.Clamp01(visited.Count / 20f));
@@ -37,17 +66,18 @@ namespace Maaaaa.Asn.Editor.Core
                 return;
             }
 
-            var records = PrefabYamlParser.Parse(assetPath, absolutePath);
-            foreach (var record in records)
+            if (!scanCache.TryGetValue(assetPath, out var records))
             {
-                Resolve(record, backingFileExistence);
-                result.References.Add(record);
+                records = PrefabYamlParser.Parse(assetPath, absolutePath);
+                foreach (var record in records) Resolve(record, backingFileExistence);
+                scanCache[assetPath] = records;
             }
+            result.References.AddRange(records);
 
             // Prefab Variant の親および Nested Prefab は m_SourcePrefab として表れる。
             foreach (var record in records)
                 if (record.PropertyName == "m_SourcePrefab" && record.GuidResolved && record.ResolvedAssetPath.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase))
-                    InspectRecursive(record.ResolvedAssetPath, result, visited, backingFileExistence, showProgress, false);
+                    InspectRecursive(record.ResolvedAssetPath, result, visited, backingFileExistence, scanCache, showProgress, false);
         }
 
         private static void Resolve(ReferenceRecord record, Dictionary<string, bool> backingFileExistence)
@@ -96,12 +126,19 @@ namespace Maaaaa.Asn.Editor.Core
                 record.TypeAssessment = record.ExpectedType == null ? "期待型を YAML から確定できないため判定不可" : null;
         }
 
+        internal static bool IsBackingFileMissing(string assetPath)
+        {
+            return IsBackingFileMissing(assetPath, null);
+        }
+
         private static bool IsBackingFileMissing(string assetPath, Dictionary<string, bool> existenceCache)
         {
+            if (string.IsNullOrEmpty(assetPath)) return true;
             if (!assetPath.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase) &&
                 !assetPath.StartsWith("Packages/", StringComparison.OrdinalIgnoreCase))
                 return false;
-            if (!existenceCache.TryGetValue(assetPath, out var exists))
+            bool exists;
+            if (existenceCache == null || !existenceCache.TryGetValue(assetPath, out exists))
             {
                 try
                 {
@@ -113,7 +150,7 @@ namespace Maaaaa.Asn.Editor.Core
                     // パスを安全に確認できない場合は、欠落と断定して誤検知させない。
                     exists = true;
                 }
-                existenceCache[assetPath] = exists;
+                if (existenceCache != null) existenceCache[assetPath] = exists;
             }
             return !exists;
         }

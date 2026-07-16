@@ -72,7 +72,7 @@ namespace Maaaaa.Asn.Editor.Core
             switch (kind)
             {
                 case IssueKind.GuidMissing: return "T-A GUID 解決不可: guid がプロジェクト内に存在しません（パッケージ未導入、meta 再生成など）。";
-                case IssueKind.FileIdMissing: return "T-B fileID 解決不可: guid は解決しますが fileID がアセット内にありません（FBX 再インポートによるサブアセットの fileID 変化など）。";
+                case IssueKind.FileIdMissing: return "T-B fileID 解決不可: guid は解決しますが fileID がアセット内にありません（FBX 元データ内の Mesh / Node 名変更など。通常の Import Settings 変更だけでは fileID は維持される場合があります）。";
                 case IssueKind.MissingScript: return "T-C Missing Script: m_Script の guid が解決できません（スクリプトやパッケージの消失、Dynamic Bone の残骸など）。";
                 case IssueKind.EmptyReference: return "T-D 空参照: fileID が 0 です（意図的な未設定の可能性があり、誤検知を多く含みます）。";
                 case IssueKind.TypeMismatch: return "T-E 型不一致: 解決したアセットの型がフィールドの期待型と異なります（手動書き換えの失敗など）。";
