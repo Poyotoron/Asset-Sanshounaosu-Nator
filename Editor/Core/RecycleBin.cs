@@ -41,8 +41,8 @@ namespace Maaaaa.Asn.Editor.Core
             get
             {
                 if (Application.platform == RuntimePlatform.WindowsEditor) return "Windows ごみ箱 ($Recycle.Bin)";
-                if (Application.platform == RuntimePlatform.OSXEditor) return "macOS ごみ箱 (~/.Trash)";
-                if (Application.platform == RuntimePlatform.LinuxEditor) return "Linux XDG ごみ箱";
+                if (Application.platform == RuntimePlatform.OSXEditor) return "macOS ごみ箱 (~/.Trash / 実装済み・実機未検証)";
+                if (Application.platform == RuntimePlatform.LinuxEditor) return "Linux XDG ごみ箱 (実装済み・実機未検証)";
                 return "この OS のごみ箱探索には対応していません。";
             }
         }
