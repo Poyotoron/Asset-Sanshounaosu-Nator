@@ -53,6 +53,7 @@ namespace Maaaaa.Asn.Editor.Core
         public int MatchedNames;
         public int MatchedEntries;
         public int MatchedPackages;
+        public int CommonNameLimit;
         public int CommonNamesExcluded;
         public int CandidateLimitExcluded;
         public int Presented;
@@ -63,15 +64,17 @@ namespace Maaaaa.Asn.Editor.Core
     {
         private sealed class LookupEntry
         {
+            public string Guid;
             public string OriginalPath;
             public string PackagePath;
         }
 
         private const int SchemaVersion = 1;
         private const int MinimumNameScore = 600;
-        private const int MaximumMatchesPerName = 20;
         private const int MaximumPresentedNames = 8;
         private const int MaximumPresentedPackages = 8;
+        private const int MinimumCommonNameLimit = 2;
+        private const double MaximumPackageRatio = 0.05;
         private static UnityPackageIndexData _cached;
         private static Dictionary<string, List<LookupEntry>> _guidLookup;
         private static Dictionary<string, List<LookupEntry>> _nameLookup;
@@ -160,13 +163,19 @@ namespace Maaaaa.Asn.Editor.Core
             diagnostics = new UnityPackageNameSearchDiagnostics();
             var result = new List<RepairCandidate>();
             if (record == null) return result;
-            var hints = SimilarAssetFinder.BuildHints(record);
+            var hints = SimilarAssetFinder.BuildAssetNameHints(record);
             diagnostics.Hints = hints;
             if (hints.Length == 0) return result;
 
             var lookup = GetNameLookup();
             diagnostics.IndexedNames = lookup.Count;
             var prefabOnly = SimilarAssetFinder.IsPrefabReference(record);
+            var indexedPackageCount = Math.Max(1, Load().packages.Count);
+            // 実測では 93.1% の名前が 1～2 package に収まる。小規模索引では 5% を上限にし、
+            // 受理した GUID/package をすべて提示できるよう表示上限 8 件を絶対上限にする。
+            var commonNameLimit = Math.Min(MaximumPresentedPackages,
+                Math.Max(MinimumCommonNameLimit, (int)Math.Ceiling(indexedPackageCount * MaximumPackageRatio)));
+            diagnostics.CommonNameLimit = commonNameLimit;
             foreach (var pair in lookup)
             {
                 var bestScore = 0f;
@@ -187,39 +196,43 @@ namespace Maaaaa.Asn.Editor.Core
                 diagnostics.ExtensionExcludedEntries += pair.Value.Count - entries.Count;
                 if (entries.Count == 0) continue;
                 var packagePaths = entries.Select(item => item.PackagePath).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                var assetGuids = entries.Select(item => item.Guid).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
                 diagnostics.MatchedNames++;
                 diagnostics.MatchedEntries += entries.Count;
                 diagnostics.MatchedPackages += packagePaths.Count;
-                if (entries.Count > MaximumMatchesPerName || packagePaths.Count > MaximumMatchesPerName)
+                if (assetGuids.Count > commonNameLimit || packagePaths.Count > commonNameLimit)
                 {
                     diagnostics.CommonNamesExcluded++;
-                    diagnostics.Notes.Add("名前『" + pair.Key + "』は " + entries.Count + " エントリ / " + packagePaths.Count +
-                        " package に存在し、" + MaximumMatchesPerName + " 件を超えるため除外しました。");
+                    diagnostics.Notes.Add("名前『" + pair.Key + "』は " + assetGuids.Count + " GUID / " + entries.Count + " エントリ / " + packagePaths.Count +
+                        " package に存在し、現在の上限 " + commonNameLimit + " 件を超えるため除外しました。");
                     continue;
                 }
 
-                var representative = entries[0];
-                var candidate = new RepairCandidate
+                foreach (var guidGroup in entries.GroupBy(item => item.Guid, StringComparer.OrdinalIgnoreCase))
                 {
-                    Guid = record.Guid,
-                    FileId = record.FileId,
-                    AssetPath = representative.OriginalPath,
-                    OriginalAssetPath = representative.OriginalPath,
-                    ExternalPath = representative.PackagePath,
-                    Certainty = CandidateCertainty.Guess,
-                    Score = bestScore,
-                    ScoreReason = bestReason,
-                    SourceKind = CandidateSourceKind.UnityPackage,
-                    SourceLabel = ".unitypackage (名前一致・推測)",
-                    OriginDescription = ".unitypackage 内の名前一致『" + pair.Key + "』: " + entries.Count +
-                        " エントリ / " + packagePaths.Count + " package" +
-                        (packagePaths.Count > MaximumPresentedPackages ? "（表示は先頭 " + MaximumPresentedPackages + " 件、他 " +
-                            (packagePaths.Count - MaximumPresentedPackages) + " 件）" : string.Empty),
-                    CanRepair = false
-                };
-                candidate.SourceKinds.Add(CandidateSourceKind.UnityPackage);
-                candidate.PackagePaths.AddRange(packagePaths.Take(MaximumPresentedPackages));
-                result.Add(candidate);
+                    var groupedEntries = guidGroup.ToList();
+                    var groupedPackages = groupedEntries.Select(item => item.PackagePath).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                    var representative = groupedEntries[0];
+                    var candidate = new RepairCandidate
+                    {
+                        Guid = representative.Guid,
+                        FileId = record.FileId,
+                        AssetPath = representative.OriginalPath,
+                        OriginalAssetPath = representative.OriginalPath,
+                        ExternalPath = representative.PackagePath,
+                        Certainty = CandidateCertainty.Guess,
+                        Score = bestScore,
+                        ScoreReason = bestReason,
+                        SourceKind = CandidateSourceKind.UnityPackage,
+                        SourceLabel = ".unitypackage (名前一致・推測)",
+                        OriginDescription = ".unitypackage 内の名前一致『" + pair.Key + "』: package 内 GUID " +
+                            representative.Guid + " / " + groupedEntries.Count + " エントリ / " + groupedPackages.Count + " package",
+                        CanRepair = false
+                    };
+                    candidate.SourceKinds.Add(CandidateSourceKind.UnityPackage);
+                    candidate.PackagePaths.AddRange(groupedPackages);
+                    result.Add(candidate);
+                }
             }
             result = result.OrderByDescending(item => item.Score).ThenBy(item => item.AssetPath, StringComparer.OrdinalIgnoreCase).ToList();
             if (result.Count > MaximumPresentedNames)
@@ -243,7 +256,7 @@ namespace Maaaaa.Asn.Editor.Core
                     if (string.IsNullOrEmpty(entry.guid)) continue;
                     if (!lookup.TryGetValue(entry.guid, out var entries))
                         lookup.Add(entry.guid, entries = new List<LookupEntry>());
-                    entries.Add(new LookupEntry { OriginalPath = entry.originalPath, PackagePath = package.path });
+                    entries.Add(new LookupEntry { Guid = entry.guid, OriginalPath = entry.originalPath, PackagePath = package.path });
                 }
             }
             _guidLookup = lookup;
@@ -259,11 +272,12 @@ namespace Maaaaa.Asn.Editor.Core
             {
                 foreach (var entry in package.entries)
                 {
+                    if (string.IsNullOrEmpty(entry.guid)) continue;
                     var name = Path.GetFileNameWithoutExtension(entry.originalPath ?? string.Empty);
                     if (string.IsNullOrWhiteSpace(name)) continue;
                     if (!lookup.TryGetValue(name, out var entries))
                         lookup.Add(name, entries = new List<LookupEntry>());
-                    entries.Add(new LookupEntry { OriginalPath = entry.originalPath, PackagePath = package.path });
+                    entries.Add(new LookupEntry { Guid = entry.guid, OriginalPath = entry.originalPath, PackagePath = package.path });
                 }
             }
             _nameLookup = lookup;

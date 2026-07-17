@@ -24,8 +24,8 @@ namespace Maaaaa.Asn.Editor.Core
         {
             var text = new StringBuilder();
             text.AppendLine(NameHints.Length == 0
-                ? "名前の手がかり: なし"
-                : "名前の手がかり: " + string.Join(" / ", NameHints.Select(item => "『" + item + "』").ToArray()));
+                ? "プロジェクト内探索の手がかり: なし"
+                : "プロジェクト内探索の手がかり: " + string.Join(" / ", NameHints.Select(item => "『" + item + "』").ToArray()));
             text.AppendLine(ProjectEnabled
                 ? "プロジェクト内: " + ProjectReturned + " 件"
                 : "プロジェクト内: 無効");
@@ -44,10 +44,13 @@ namespace Maaaaa.Asn.Editor.Core
                     UnityPackageStatus.GuidCount + " GUID" + (UnityPackageStatus.Completed ? "" : " / 未完了") + "）");
                 if (UnityPackageGuidReturned == 0)
                 {
+                    text.AppendLine(UnityPackageNameSearch.Hints.Length == 0
+                        ? "  名前探索の手がかり: なし"
+                        : "  名前探索の手がかり: " + string.Join(" / ", UnityPackageNameSearch.Hints.Select(item => "『" + item + "』").ToArray()));
                     text.AppendLine("  当該 GUID は索引にありません。名前 " + UnityPackageNameSearch.IndexedNames +
                         " 種を照合 → 部分一致以上 " + UnityPackageNameSearch.MatchedNames + " 種 / " +
                         UnityPackageNameSearch.MatchedEntries + " エントリ / " + UnityPackageNameSearch.MatchedPackages +
-                        " package → ありふれた名前を " + UnityPackageNameSearch.CommonNamesExcluded +
+                        " package → 重複上限 " + UnityPackageNameSearch.CommonNameLimit + " 件 / ありふれた名前を " + UnityPackageNameSearch.CommonNamesExcluded +
                         " 種除外 / 上限超過 " + UnityPackageNameSearch.CandidateLimitExcluded + " 件");
                     foreach (var note in UnityPackageNameSearch.Notes) text.AppendLine("  " + note);
                 }

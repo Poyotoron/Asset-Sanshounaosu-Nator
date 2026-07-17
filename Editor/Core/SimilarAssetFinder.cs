@@ -84,6 +84,16 @@ namespace Maaaaa.Asn.Editor.Core
 
         public static string[] BuildHints(ReferenceRecord record)
         {
+            return BuildHints(record, true);
+        }
+
+        internal static string[] BuildAssetNameHints(ReferenceRecord record)
+        {
+            return BuildHints(record, false);
+        }
+
+        private static string[] BuildHints(ReferenceRecord record, bool includeGameObjectName)
+        {
             var hints = new List<string>();
             foreach (var path in UnityPackageIndexStore.GetOriginalPaths(record.Guid))
                 AddHint(hints, Path.GetFileNameWithoutExtension(path));
@@ -92,7 +102,7 @@ namespace Maaaaa.Asn.Editor.Core
             if (!string.IsNullOrEmpty(record.ResolvedAssetPath))
                 AddHint(hints, Path.GetFileNameWithoutExtension(record.ResolvedAssetPath));
             AddHint(hints, record.ReferencedName);
-            AddHint(hints, record.GameObjectName);
+            if (includeGameObjectName) AddHint(hints, record.GameObjectName);
             return hints.ToArray();
         }
 
@@ -129,7 +139,7 @@ namespace Maaaaa.Asn.Editor.Core
 
         internal static float ScoreName(string candidateName, string hint, out string reason)
         {
-            var match = ScoreOne(candidateName, hint, "ファイル名");
+            var match = ScoreOne(candidateName, hint, "ファイル名", false);
             reason = match.Reason;
             return match.Score;
         }
@@ -158,6 +168,11 @@ namespace Maaaaa.Asn.Editor.Core
 
         private static ScoreMatch ScoreOne(string candidate, string hint, string targetLabel)
         {
+            return ScoreOne(candidate, hint, targetLabel, true);
+        }
+
+        private static ScoreMatch ScoreOne(string candidate, string hint, string targetLabel, bool includeEditDistance)
+        {
             if (string.IsNullOrEmpty(candidate) || string.IsNullOrEmpty(hint)) return new ScoreMatch();
             if (string.Equals(candidate, hint, StringComparison.OrdinalIgnoreCase))
                 return Match(1000f, "完全一致", hint, targetLabel);
@@ -167,6 +182,7 @@ namespace Maaaaa.Asn.Editor.Core
                 return Match(800f, "前方一致", hint, targetLabel);
             if (candidate.IndexOf(hint, StringComparison.OrdinalIgnoreCase) >= 0 || hint.IndexOf(candidate, StringComparison.OrdinalIgnoreCase) >= 0)
                 return Match(600f, "部分一致", hint, targetLabel);
+            if (!includeEditDistance) return new ScoreMatch();
             var distance = Levenshtein(candidate.ToLowerInvariant(), hint.ToLowerInvariant());
             return Match(Mathf.Max(1f, 400f - distance * 30f), "編集距離 " + distance, hint, targetLabel);
         }
