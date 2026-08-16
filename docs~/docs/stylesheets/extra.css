@@ -1,0 +1,22 @@
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #dc143c;
+  --md-primary-fg-color--light: #e34260;
+  --md-primary-fg-color--dark: #a50f2d;
+  --md-accent-fg-color: #c81036;
+  --md-typeset-a-color: #c11238;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #b51235;
+  --md-primary-fg-color--light: #f2536b;
+  --md-primary-fg-color--dark: #850d28;
+  --md-accent-fg-color: #ff6b80;
+  --md-typeset-a-color: #f2536b;
+}
+
+.md-typeset h1,
+.md-typeset h2 {
+  color: var(--md-typeset-a-color);
+}
+
+/* 注記ブロックは種類ごとの既定色を保ち、警告・危険・補足を見分けやすくする。 */

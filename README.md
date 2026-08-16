@@ -4,6 +4,10 @@ VRChat のアバター改変用 Unity プロジェクトで頻発する **Prefab
 
 > **本ツールは Prefab を書き換える破壊的操作を含みます。** そのため、**自動修復はしない（承認制）／書き換え前に必ず退避／「確実な復元」と「推測」を明確に区別**、を設計原則としています。
 
+**📖 使い方ドキュメント: <https://ghp.maaaaa.net/Asset-Sanshounaosu-Nator/>**
+
+導入手順・画面の読み方・探索モードの使い分け・修復の手順は、上のドキュメントサイトにまとまっています。この README は概要と警告までです。
+
 ---
 
 ## 動作環境
@@ -34,13 +38,17 @@ VRChat のアバター改変用 Unity プロジェクトで頻発する **Prefab
 
 ## 使い方
 
-1. メニュー `Tools/参照直すネーター` を開く。
-2. 「探索設定」を開く。`.unitypackage` 探索では購入物等を置いたフォルダを複数登録して「索引を構築 / 更新」し、ごみ箱探索では「ごみ箱を再走査」を押す。初回索引は容量に応じて時間がかかる。
-3. Project ウィンドウで `.prefab`、複数の Prefab、またはフォルダを選ぶか、ObjectField へドラッグ＆ドロップする。
-4. 「参照を検査」を押す。一括時は件数を確認して続行する。問題があれば Prefab 単位のツリーに表示される。
-5. 各項目で「対象を表示」「候補を探す」を実行。「確実な復元」と「推測」を区別して確認する。
-6. `.unitypackage` 候補は表示された package を自分でインポートする。ごみ箱候補は復元先を確認し、コピーを明示承認する。
-7. Prefab 修復は 1 件ずつ承認する。YAML 直接書き換えは Diff を確認し、書き換え前に作られるバックアップを保管する。
+メニュー `Tools/参照直すネーター` を開き、対象の Prefab またはフォルダを指定して「参照を検査」を押します。
+
+詳しい手順（探索モードの準備、結果の読み方、修復の承認、元に戻す方法）は**[ドキュメントサイト](https://ghp.maaaaa.net/Asset-Sanshounaosu-Nator/)**を参照してください。
+
+| 知りたいこと | ページ |
+|---|---|
+| 最短で 1 回試す | [クイックスタート](https://ghp.maaaaa.net/Asset-Sanshounaosu-Nator/quickstart/) |
+| Force Text への変換 | [事前準備](https://ghp.maaaaa.net/Asset-Sanshounaosu-Nator/serialization/) |
+| 検査結果の分類の意味 | [結果の読み方](https://ghp.maaaaa.net/Asset-Sanshounaosu-Nator/results/) |
+| 修復の流れと注意点 | [修復する](https://ghp.maaaaa.net/Asset-Sanshounaosu-Nator/repair/) |
+| 直したものを元に戻す | [バックアップとログ](https://ghp.maaaaa.net/Asset-Sanshounaosu-Nator/backup/) |
 
 ---
 

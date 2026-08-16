@@ -44,7 +44,7 @@ jobs:
       - name: Create Package Zip
         run: |
           zip -r "${{ env.zipFile }}" . \
-            -x '.git/*' '.github/*' '.gitignore' '.claude/*' '.codex/*'
+            -x '.git/*' '.github/*' '.gitignore' '.claude/*' '.codex/*' 'docs~/*'
 
       # .meta 一覧を作り、.unitypackage を生成する（VCC 非利用者向け）
       - name: Track Package Meta Files
