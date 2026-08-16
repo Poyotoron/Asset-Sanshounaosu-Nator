@@ -8,6 +8,7 @@
 
 ### Changed
 - 使い方ドキュメントを GitHub Pages で公開した: https://ghp.maaaaa.net/Asset-Sanshounaosu-Nator/
+- パッケージ情報にドキュメントへのリンクを追加した (VCC / ALCOM のパッケージ詳細から開ける)。
 - ツール本体の機能・挙動は 0.2.0 から変更していない。
 
 ## [0.2.0] - 2026-07-16
