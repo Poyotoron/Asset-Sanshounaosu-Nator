@@ -2,6 +2,14 @@
 
 このプロジェクトの変更履歴。バージョニングは [Semantic Versioning](https://semver.org/lang/ja/) に従う。
 
+## [0.2.1] - 2026-08-16
+
+使い方ドキュメントの公開を目的とするリリース。ツールの機能・挙動に変更はない。
+
+### Changed
+- 使い方ドキュメントを GitHub Pages で公開した: https://ghp.maaaaa.net/Asset-Sanshounaosu-Nator/
+- ツール本体の機能・挙動は 0.2.0 から変更していない。
+
 ## [0.2.0] - 2026-07-16
 
 Phase 2 リリース。プロジェクト外の `.unitypackage` と OS ごみ箱まで探索範囲を広げ、fileID・Missing Script の修復導線と複数 Prefab の一括検査を追加した。確実な GUID 一致と名前による推測は、候補データと UI の両方で区別する。
