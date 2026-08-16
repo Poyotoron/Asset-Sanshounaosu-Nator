@@ -1,0 +1,67 @@
+site_name: アセット参照直すネーター
+site_url: https://ghp.maaaaa.net/Asset-Sanshounaosu-Nator/
+repo_url: https://github.com/Poyotoron/Asset-Sanshounaosu-Nator
+site_dir: site
+
+theme:
+  name: material
+  language: ja
+  custom_dir: overrides
+  favicon: assets/favicon.png
+  features:
+    - navigation.sections
+    - navigation.expand
+    - toc.follow
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: ダークテーマに切り替える
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: ライトテーマに切り替える
+
+plugins:
+  - search:
+      lang: ja
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.superfences
+  - tables
+  - toc:
+      permalink: true
+
+extra_css:
+  - stylesheets/extra.css
+
+extra:
+  asn_version: !ENV [ASN_VERSION, dev]
+
+nav:
+  - はじめに: index.md
+  - インストール: install.md
+  - クイックスタート: quickstart.md
+  - 事前準備（Force Text）: serialization.md
+  - 参照を検査する: inspect.md
+  - 結果の読み方: results.md
+  - 候補を探す:
+      - プロジェクト内から探す: search-project.md
+      - .unitypackage から探す: search-unitypackage.md
+      - ごみ箱から探す: search-trash.md
+  - 修復する: repair.md
+  - まとめて検査する: batch.md
+  - バックアップとログ: backup.md
+  - 困ったときは: troubleshooting.md
+  - 更新履歴: changelog.md

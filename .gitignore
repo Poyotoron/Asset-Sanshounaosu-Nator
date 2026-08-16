@@ -112,3 +112,7 @@ InitTestScene*.unity*
 .codex
 .agents/
 .agents
+
+# Docs site build output
+docs~/site/
+docs~/.cache/
